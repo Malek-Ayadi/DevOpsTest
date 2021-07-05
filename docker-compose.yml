@@ -1,0 +1,80 @@
+version: "3.5"
+
+services:
+  db_cms:
+    container_name: devopstest-staging-db_cms
+    build:
+      context: build/database
+      dockerfile: Dockerfile
+    networks:
+      - backend
+    volumes:
+      - db_cms:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_CMS}
+      MYSQL_PASSWORD: ${DB_CMS_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_CMS_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_CMS_USER}
+
+  php_cms:
+    container_name: devopstest-${ENVIRONMENT}-php_cms
+    build:
+      context: build/php-fpm
+      dockerfile: Dockerfile
+    networks:
+      - backend
+    depends_on:
+      - db_cms
+    restart: always
+    environment:
+      DB_HOST: "db_cms"
+      DB_NAME: ${DB_CMS}
+      DB_PASSWORD: ${DB_CMS_PASSWORD}
+      DB_USER: ${DB_CMS_USER}
+      DOCKER_NAME: devopstest-php_cms
+      ENVIRONMENT: ${ENVIRONMENT}
+
+  webserver:
+    container_name: devopstest-${ENVIRONMENT}-webserver
+    build:
+      context: build/nginx
+      dockerfile: Dockerfile
+    networks:
+      - backend
+    volumes:
+      - ./config/webserver/sites-enabled/:/etc/nginx/sites-enabled/:cached
+    depends_on:
+      - php_cms
+    restart: always
+    environment:
+      DOCKER_NAME: devopstest-webserver
+      ENVIRONMENT: ${ENVIRONMENT}
+      PROJECT_PATH: "/var/www/loop/cms/current/"
+
+  loadbalancer:
+    container_name: devopstest-${ENVIRONMENT}-loadbalancer
+    build:
+      context: build/haproxy
+      dockerfile: Dockerfile
+    networks:
+      - backend
+      - frontend
+    volumes:
+      - ./config/loadbalancer/etc/haproxy/03_haproxy.cfg:/etc/haproxy/03_haproxy.cfg
+    depends_on:
+      - webserver
+    restart: always
+    environment:
+      BASIC_AUTH_PASSWORD: ${BASIC_AUTH_PASSWORD}
+      BASIC_AUTH_USERNAME: ${BASIC_AUTH_USERNAME}
+      DOCKER_NAME: devopstest-loadbalancer
+      ENVIRONMENT: ${ENVIRONMENT}
+
+networks:
+  backend:
+  frontend:
+
+volumes:
+  certs:
+  db_cms:

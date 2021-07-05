@@ -1,0 +1,25 @@
+version: "3.5"
+
+services:
+  db_cms:
+    ports:
+      - 3306:3306
+    restart: "no"
+    volumes:
+      - ./backups/devopstest-db_cms:/backup/
+
+  php_cms:
+    restart: "no"
+    volumes:
+      - ./src/cms/:/var/www/loop/cms/
+
+  webserver:
+    restart: "no"
+    volumes:
+      - ./src/cms/:/var/www/loop/cms/
+
+  loadbalancer:
+    ports:
+      - 80:80
+      - 443:443
+    restart: "no"
