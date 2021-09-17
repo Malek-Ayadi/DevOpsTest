@@ -16,7 +16,7 @@ USER root
 
 RUN set -x && \
     apt-get update && \
-    apt-get install -y --no-install-recommends rsyslog socat && \
+    apt-get install -y --no-install-recommends openssl rsyslog socat && \
     # setup files for haproxy logging
     touch /var/log/haproxy.log &&  \
     ln -sf /dev/stdout /var/log/haproxy.log && \
